@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHARA — Fiche d'âme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!--
+  * Vous ne devriez pas être en train de lire ceci.
+  * ... mais puisque vous êtes là : essayez de taper "chara" au clavier, n'importe où sur la page.
+-->
+<style>
+  :root{
+    --bg:#120607;
+    --panel:#1a0a0b;
+    --border:#f0e0d8;
+    --white:#f0e0d8;
+    --muted:#9c7c78;
+    --accent:#ff2d2d;
+    --accent-dim:#8a1414;
+    --dt:#ff0000;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);color:var(--white);
+    font-family:'Space Mono', monospace;line-height:1.6;
+    position:relative;overflow-x:hidden;cursor:default;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:999;
+    background:repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 3px);
+    mix-blend-mode:overlay;
+  }
+  .vignette{
+    position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,.7) 100%),
+               radial-gradient(ellipse at 50% 30%, rgba(255,45,45,.08) 0%, transparent 60%);
+    animation:breathe 6s ease-in-out infinite;
+  }
+  @keyframes breathe{0%,100%{opacity:.88;}50%{opacity:1;}}
+  canvas#dt{position:fixed;inset:0;z-index:0;pointer-events:none;}
+  .pixel{font-family:'Press Start 2P', monospace;}
+
+  #mute-btn{
+    position:fixed;top:14px;left:14px;z-index:200;
+    font-family:'Press Start 2P', monospace;font-size:12px;
+    color:var(--accent);background:rgba(5,5,5,.6);
+    border:1px solid var(--border);padding:8px 10px;cursor:pointer;
+  }
+
+  .statbar{
+    position:sticky;top:0;z-index:100;background:var(--bg);
+    border-bottom:3px solid var(--border);padding:10px 24px;
+    display:flex;flex-wrap:wrap;gap:18px;align-items:center;font-size:11px;
+  }
+  .statbar .name{color:var(--accent);font-weight:700;letter-spacing:1px;}
+  .statbar .stat span{color:var(--muted);margin-right:6px;}
+  .statbar .stat b{color:var(--white);}
+
+  nav{
+    position:sticky;top:41px;z-index:99;background:var(--bg);
+    border-bottom:3px solid var(--border);display:grid;grid-template-columns:repeat(7,1fr);
+  }
+  nav a{
+    text-decoration:none;color:var(--muted);font-family:'Press Start 2P', monospace;font-size:8.5px;
+    text-align:center;padding:14px 3px;border-right:2px solid var(--border);position:relative;transition:color .2s;
+  }
+  nav a:last-child{border-right:none;}
+  nav a::before{
+    content:"♥";position:absolute;left:6px;top:50%;transform:translateY(-50%) scale(0);
+    color:var(--accent);transition:transform .2s;
+  }
+  nav a.active{color:var(--accent);}
+  nav a.active::before{transform:translateY(-50%) scale(1);}
+  nav a:hover{color:var(--white);}
+
+  .hero{
+    min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:60px 20px;position:relative;z-index:2;
+  }
+  .soul{
+    width:46px;height:46px;position:relative;margin-bottom:34px;cursor:pointer;
+    filter:drop-shadow(0 0 12px var(--accent));animation:pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.07);}}
+  .soul svg .fill{fill:var(--dt);}
+  .soul svg .crack{fill:none;stroke:#1a0000;stroke-width:0.6;opacity:.8;}
+  .soul-hint{font-size:9px;color:var(--muted);margin-top:10px;letter-spacing:.5px;}
+  .scroll-cue{position:absolute;bottom:26px;font-size:9px;color:var(--muted);letter-spacing:2px;animation:bob 2s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(6px);}}
+
+  h1.title{
+    font-size:clamp(32px,7vw,60px);letter-spacing:6px;color:var(--white);
+    text-shadow:0 0 20px var(--accent-dim);
+  }
+  .subtitle-line{margin-top:22px;font-size:13px;color:var(--accent);min-height:22px;letter-spacing:.5px;}
+  .subtitle-line .cursor{
+    display:inline-block;width:8px;height:14px;background:var(--accent);
+    margin-left:2px;animation:blink 1s step-end infinite;vertical-align:middle;
+  }
+  @keyframes blink{50%{opacity:0;}}
+
+  section{max-width:900px;margin:0 auto;padding:60px 24px;scroll-margin-top:100px;position:relative;z-index:2;}
+  .box{
+    border:3px solid var(--border);background:var(--panel);padding:32px 30px;position:relative;
+    opacity:0;transform:translateY(24px);transition:opacity .7s ease, transform .7s ease;
+  }
+  .box.in-view{opacity:1;transform:translateY(0);}
+  .box::before{
+    content:attr(data-tag);position:absolute;top:-13px;left:20px;background:var(--bg);padding:0 10px;
+    font-family:'Press Start 2P', monospace;font-size:9.5px;color:var(--accent);letter-spacing:1px;
+  }
+  h2{font-family:'Press Start 2P', monospace;font-size:14px;margin-bottom:20px;color:var(--white);}
+  h3.subhead{font-family:'Press Start 2P', monospace;font-size:10.5px;color:var(--accent);margin:22px 0 12px;letter-spacing:1px;}
+  p{color:#d8cfcb;font-size:14px;margin-bottom:12px;}
+  .muted{color:var(--muted);font-size:12.5px;}
+
+  .id-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+  .id-item .label{font-size:9.5px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+  .id-item .value{font-size:15px;color:var(--white);font-weight:700;}
+
+  .soul-visual{display:flex;align-items:center;gap:24px;margin-bottom:24px;flex-wrap:wrap;}
+  .soul-big{width:60px;height:60px;flex-shrink:0;filter:drop-shadow(0 0 16px var(--accent));animation:pulse 2.4s ease-in-out infinite;}
+  .soul-big svg .fill{fill:var(--dt);}
+  .soul-big svg .crack{fill:none;stroke:#1a0000;stroke-width:0.6;opacity:.8;}
+
+  .quote{border-left:3px solid var(--accent);padding-left:16px;margin:20px 0;font-style:italic;color:var(--white);font-size:13.5px;}
+
+  .badge{
+    display:inline-flex;align-items:center;justify-content:center;
+    border:2px solid var(--accent);color:var(--accent);
+    font-family:'Press Start 2P', monospace;font-size:9.5px;
+    padding:11px 15px;margin-bottom:16px;line-height:1;letter-spacing:1px;white-space:nowrap;
+  }
+
+  .card-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:6px;}
+  .form-card, .power-card{
+    border:2px solid var(--border);padding:16px 18px;transition:border-color .2s, transform .2s, box-shadow .2s;
+  }
+  .form-card:hover, .power-card:hover{border-color:var(--accent);transform:translateX(4px);box-shadow:-4px 0 14px rgba(255,45,45,.15);}
+  .form-card .fname, .power-card .pname{font-weight:700;color:var(--white);font-size:13.5px;margin-bottom:5px;}
+  .form-card .ftype, .power-card .ptype{font-size:8.5px;color:var(--muted);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase;}
+  .form-card p, .power-card p{font-size:13px;margin:0;color:#c9bcb8;}
+  .power-card .warn{margin-top:8px;font-size:12px;color:var(--accent);font-style:italic;}
+
+  footer{
+    text-align:center;padding:46px 20px 64px;font-size:9.5px;color:var(--muted);
+    font-family:'Press Start 2P', monospace;letter-spacing:1px;position:relative;z-index:2;
+  }
+  #hidden-heart{
+    position:fixed;bottom:10px;right:10px;width:14px;height:14px;z-index:150;cursor:pointer;opacity:.035;transition:opacity .3s;
+  }
+  #hidden-heart:hover{opacity:.25;}
+  #hidden-heart svg path{fill:var(--white);}
+  #toast{
+    position:fixed;bottom:34px;left:50%;transform:translateX(-50%) translateY(10px);
+    background:var(--panel);border:2px solid var(--border);padding:10px 18px;font-size:11px;color:var(--white);
+    z-index:300;opacity:0;pointer-events:none;transition:opacity .4s, transform .4s;
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  #flash-overlay{
+    position:fixed;inset:0;z-index:250;background:radial-gradient(circle, rgba(255,45,45,.22), transparent 70%);
+    opacity:0;pointer-events:none;transition:opacity .55s;
+  }
+  #flash-overlay.show{opacity:1;}
+
+  @media(max-width:640px){
+    nav{grid-template-columns:repeat(4,1fr);}
+    nav a{font-size:7.5px;padding:11px 2px;}
+    .id-grid{grid-template-columns:1fr;}
+    .statbar{font-size:9px;gap:10px;}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="dt"></canvas>
+<div class="vignette"></div>
+<div id="flash-overlay"></div>
+<div id="toast"></div>
+<button id="mute-btn" class="pixel" title="Couper / activer la musique">♪</button>
+
+<audio id="audio-main" src="determination.mp3" loop preload="none"></audio>
+
+<div class="statbar">
+  <span class="name pixel" style="font-size:10px;">CHARA</span>
+  <span class="stat"><span>ÂME</span><b>DÉTERMINATION</b></span>
+  <span class="stat"><span>HÔTE</span><b>MIA</b></span>
+  <span class="stat"><span>FORME</span><b>PHANTOM</b></span>
+</div>
+
+<nav id="nav">
+  <a href="#identite">IDENTITÉ</a>
+  <a href="#ame">ÂME</a>
+  <a href="#faction">FACTION</a>
+  <a href="#objectif">OBJECTIF</a>
+  <a href="#formes">FORMES</a>
+  <a href="#pouvoirs">POUVOIRS</a>
+  <a href="#histoire">HISTOIRE</a>
+</nav>
+
+<div class="hero">
+  <div class="soul" id="soul">
+    <svg viewBox="0 0 32 32">
+      <path class="fill" d="M16 29C16 29 2 19.5 2 10.8C2 5.9 5.9 2 10.7 2C13.1 2 15.1 3.1 16 5.1C16.9 3.1 18.9 2 21.3 2C26.1 2 30 5.9 30 10.8C30 19.5 16 29 16 29Z"/>
+      <path class="crack" d="M14 6 L16 10 L13 13 L17 17 L14 21 L18 25"/>
+      <path class="crack" d="M20 8 L18 12 L21 15"/>
+    </svg>
+  </div>
+  <h1 class="title pixel">CHARA</h1>
+  <div class="subtitle-line pixel" id="typewriter"><span class="cursor"></span></div>
+  <div class="soul-hint">clique sur l'âme...</div>
+  <div class="scroll-cue pixel">▼ SCROLL ▼</div>
+</div>
+
+<section id="identite">
+  <div class="box in-view" data-tag="01 — IDENTITÉ">
+    <h2>Identité</h2>
+    <div class="id-grid">
+      <div class="id-item"><div class="label">Prénom</div><div class="value">Chara</div></div>
+      <div class="id-item"><div class="label">Genre</div><div class="value">Non-binaire</div></div>
+    </div>
+    <p style="margin-top:20px;"><strong style="color:var(--white)">Pronoms :</strong> préfère être appelée au féminin, mais s'en soucie peu — que ce soit sous sa forme fantomatique ou dans son corps humain.</p>
+    <p><strong style="color:var(--white)">Rapport aux humains :</strong> morte à cause d'humains, elle ne les apprécie pas et ne leur fait pas confiance — à l'exception de Mia. Elle n'est pas activement hostile ou irrespectueuse, mais ne cachera pas son aversion si on le lui demande. Les seuls humains qu'elle tolère, voire apprécie, sont les âmes de Gentillesse — naturellement bienveillantes.</p>
+    <p><strong style="color:var(--white)">Particularité :</strong> une admiration très prononcée et obsessionnelle pour Clover.</p>
+  </div>
+</section>
+
+<section id="ame">
+  <div class="box" data-tag="02 — ÂME">
+    <h2>Âme</h2>
+    <div class="soul-visual">
+      <div class="soul-big">
+        <svg viewBox="0 0 32 32">
+          <path class="fill" d="M16 29C16 29 2 19.5 2 10.8C2 5.9 5.9 2 10.7 2C13.1 2 15.1 3.1 16 5.1C16.9 3.1 18.9 2 21.3 2C26.1 2 30 5.9 30 10.8C30 19.5 16 29 16 29Z"/>
+          <path class="crack" d="M14 6 L16 10 L13 13 L17 17 L14 21 L18 25"/>
+          <path class="crack" d="M20 8 L18 12 L21 15"/>
+        </svg>
+      </div>
+      <div>
+        <div class="badge pixel">DÉTERMINATION</div>
+      </div>
+    </div>
+    <p>L'âme de Chara est vide, fissurée — ce qui aurait dû s'éteindre définitivement avec sa mort. Seul un éclat de Détermination continue de la maintenir en existence.</p>
+    <p>Ce fragment a aussi fusionné avec son corps : il ne se décompose pas, et se régénère lentement lorsqu'il subit des dégâts — mais uniquement hors combat.</p>
+    <div class="quote">« Il ne reste presque rien d'elle. Presque. »</div>
+  </div>
+</section>
+
+<section id="faction">
+  <div class="box" data-tag="03 — FACTION">
+    <h2>Faction</h2>
+    <div class="badge pixel">FAMILLE ROYALE</div>
+    <p>Chara fait partie de la famille royale — un lien qui la rattache encore à ce monde, et surtout à Asriel.</p>
+  </div>
+</section>
+
+<section id="objectif">
+  <div class="box" data-tag="04 — OBJECTIF">
+    <h2>Objectif</h2>
+    <div class="badge pixel">RETROUVER UN CORPS</div>
+    <p>Retrouver un corps stable et vivant, cesser d'être un fantôme, pouvoir vivre à nouveau — surtout aux côtés d'Asriel, son frère.</p>
+  </div>
+</section>
+
+<section id="formes">
+  <div class="box" data-tag="05 — FORMES">
+    <h2>Formes</h2>
+    <div class="card-grid">
+      <div class="form-card">
+        <div class="fname">Forme Fantôme</div>
+        <div class="ftype">Par défaut</div>
+        <p>Invisible et inaudible pour tous, sauf son ou ses hôte(s) — Mia, et dans une moindre mesure Frisk (l'hôte originel, pleinement Déterminé). Si elle se connecte à un autre humain via le Lien d'Âme, celui-ci ne perçoit qu'une silhouette noire aux yeux rouges et une voix déformée : impossible de la reconnaître, mais une sensation de familiarité étrange peut subsister.</p>
+      </div>
+      <div class="form-card">
+        <div class="fname">Forme Fantôme Combattante</div>
+        <div class="ftype">Basée sur « Delta Sans » / Bravoure</div>
+        <p>Une forme fantomatique capable de se battre. Sa portée est fortement limitée par la distance qu'elle peut parcourir sous cette forme.</p>
+      </div>
+      <div class="form-card">
+        <div class="fname">Corps Humain</div>
+        <div class="ftype">Coûteuse en énergie</div>
+        <p>Chara peut animer son corps mort comme une marionnette — sans respiration, température ni douleur. Maintenir cette forme consomme de la Détermination ; l'instabilité de son âme brisée l'empêche d'y rester longtemps.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pouvoirs">
+  <div class="box" data-tag="06 — POUVOIRS">
+    <h2>Pouvoirs &amp; Capacités</h2>
+    <p class="muted" style="margin-bottom:18px;">Étant morte et n'étant plus humaine — mais une création magique faite de Détermination — Chara peut user de magie, avec de grandes limitations.</p>
+    <div class="card-grid">
+      <div class="power-card">
+        <div class="pname">Real Knife</div>
+        <div class="ptype">Arme mêlée — combat &amp; corps humain uniquement</div>
+        <p>Un couteau fait de Détermination, invocable à tout instant. Chaque coup coûte de l'énergie (DT). Fait très mal.</p>
+      </div>
+      <div class="power-card">
+        <div class="pname">Lien d'Âme</div>
+        <div class="ptype">Connexion — forme fantôme uniquement</div>
+        <p>Chara se connecte au fragment de Détermination présent dans toute âme humaine, pour étendre sa portée au-delà de Mia, écouter discrètement, ou se faire voir/entendre (silhouette noire, yeux rouges, voix déformée).</p>
+        <div class="warn">⚠ Si l'humain lié possède du LV ou de la haine, Chara peut être corrompue et devenir hostile, cherchant à accumuler du LV avec cette personne. Seuls Sans ou certaines attaques spécifiques peuvent l'arrêter sans la tuer.</div>
+      </div>
+      <div class="power-card">
+        <div class="pname">« Depuis quand tu es au contrôle ? »</div>
+        <div class="ptype">Contrôle — forme fantôme uniquement</div>
+        <p>Prise de contrôle d'une personne déjà liée par le Lien d'Âme — un membre à la fois, deux fois par jour maximum par personne. Si la cible est blessée, épuisée ou affaiblie, un contrôle total devient possible.</p>
+        <div class="warn">⚠ La personne contrôlée ressent des câbles la forçant à bouger comme une marionnette — une sensation horrible et perturbante.</div>
+      </div>
+      <div class="power-card">
+        <div class="pname">« Besoin d'aide ? »</div>
+        <div class="ptype">Lien de fighter — phantom + forme combattante uniquement</div>
+        <p>Permet à Chara de se connecter à un humain pour le suivre et l'assister au combat.</p>
+        <div class="warn">⚠ Chez les âmes sans Détermination pure, ce lien épuise rapidement la stamina, puis aspire le trait d'âme/HP — pouvant tuer si Chara ne coupe pas le lien à temps (rare, elle ne veut pas tuer). Se désactive automatiquement si l'humain perd connaissance.</div>
+      </div>
+      <div class="power-card">
+        <div class="pname">Cœur d'Amitié</div>
+        <div class="ptype">Soin — forme fantôme uniquement</div>
+        <p>Soigne 30 HP lentement, atténue la douleur. Utilisable uniquement sur son/ses hôte(s) (Mia) ou une personne liée par le Lien d'Âme.</p>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:18px; font-style:italic;">(aucun autre pouvoir n'est connu pour l'instant)</p>
+  </div>
+</section>
+
+<section id="histoire">
+  <div class="box hist" data-tag="07 — HISTOIRE">
+    <h2>Histoire</h2>
+    <p>Chara est morte il y a longtemps — à cause d'humains. C'est de là que vient sa méfiance, son aversion pour son espèce d'origine : jamais hostile sans raison, mais toujours honnête si on lui demande ce qu'elle en pense.</p>
+    <p>Grâce à sa Détermination, elle n'a jamais vraiment disparu. Un fragment a suffi à la maintenir sous une forme fantomatique, connectée à Mia — et, dans une moindre mesure, à Frisk, l'hôte originel pleinement Déterminé.</p>
+    <p>Son corps ne moisit pas. Il se régénère, lentement, hors combat. Ce n'est pas une seconde vie. C'est un sursis — et elle compte bien s'en servir pour en retrouver une vraie, aux côtés d'Asriel.</p>
+    <div class="quote">« Elle n'est pas revenue. Elle n'est jamais vraiment partie. »</div>
+  </div>
+</section>
+
+<footer class="pixel">* rester, même à l'état de fragment.</footer>
+
+<div id="hidden-heart" title="?">
+  <svg viewBox="0 0 32 32"><path d="M16 29C16 29 2 19.5 2 10.8C2 5.9 5.9 2 10.7 2C13.1 2 15.1 3.1 16 5.1C16.9 3.1 18.9 2 21.3 2C26.1 2 30 5.9 30 10.8C30 19.5 16 29 16 29Z"/></svg>
+</div>
+
+<script>
+  console.log("%c* Vous vous sentez observé.", "color:#ff2d2d;font-family:monospace;font-size:14px;");
+  console.log("%c* (Il n'y a rien d'autre à trouver ici. Ou peut-être que si.)", "color:#9c7c78;font-family:monospace;font-size:11px;");
+
+  const lines = [
+    "* Une présence que vous ne pouvez pas voir.",
+    "* Chara vous observe, quelque part.",
+    "* Il ne reste qu'un fragment de Détermination."
+  ];
+  const el = document.getElementById('typewriter');
+  const cursor = el.querySelector('.cursor');
+  let li=0, ci=0, deleting=false;
+  function type(){
+    const current = lines[li];
+    if(!deleting){
+      ci++; el.textContent = current.slice(0,ci); el.appendChild(cursor);
+      if(ci === current.length){ deleting = true; setTimeout(type, 1800); return; }
+    } else {
+      ci--; el.textContent = current.slice(0,ci); el.appendChild(cursor);
+      if(ci === 0){ deleting = false; li = (li+1) % lines.length; }
+    }
+    setTimeout(type, deleting ? 25 : 45);
+  }
+  type();
+
+  const audioMain = document.getElementById('audio-main');
+  let audioMuted = false;
+  let audioStarted = false;
+  function startAudioIfNeeded(){
+    if(audioStarted || audioMuted) return;
+    audioMain.volume = 0;
+    audioMain.play().catch(() => {});
+    let v = 0;
+    const iv = setInterval(() => {
+      v += 0.05;
+      audioMain.volume = Math.min(1, v);
+      if(v >= 1) clearInterval(iv);
+    }, 60);
+    audioStarted = true;
+  }
+  document.getElementById('mute-btn').addEventListener('click', () => {
+    audioMuted = !audioMuted;
+    audioMain.muted = audioMuted;
+    document.getElementById('mute-btn').textContent = audioMuted ? '♪̶' : '♪';
+    showToast(audioMuted ? "* Musique coupée." : "* Musique activée.");
+    if(!audioMuted) startAudioIfNeeded();
+  });
+
+  const soul = document.getElementById('soul');
+  const soulLines = [
+    "* Elle vous regarde.",
+    "* Rien ne moisit ici.",
+    "* Un simple fragment suffit.",
+    "* Elle n'a pas confiance en vous.",
+    "* ... sauf si votre âme est gentille."
+  ];
+  soul.addEventListener('click', () => {
+    soul.style.animation = 'none';
+    void soul.offsetWidth;
+    soul.style.animation = '';
+    const hint = document.getElementById('typewriter');
+    hint.textContent = soulLines[Math.floor(Math.random()*soulLines.length)];
+    startAudioIfNeeded();
+  });
+
+  let buffer = '';
+  window.addEventListener('keydown', (e) => {
+    if(e.key.length === 1){
+      buffer = (buffer + e.key).toLowerCase().slice(-5);
+      if(buffer === 'chara'){
+        const flash = document.getElementById('flash-overlay');
+        flash.classList.add('show');
+        showToast("* Une présence familière traverse l'écran.");
+        setTimeout(() => flash.classList.remove('show'), 900);
+        buffer = '';
+      }
+    }
+  });
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3200);
+  }
+  document.getElementById('hidden-heart').addEventListener('click', () => {
+    showToast("* Vous avez trouvé une âme cachée dans le coin de l'écran.");
+  });
+
+  const canvas = document.getElementById('dt');
+  const ctx = canvas.getContext('2d');
+  let w, h, particles = [];
+  function resize(){ w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+  function makeParticle(){
+    return {
+      x: Math.random()*w, y: h+10+Math.random()*100,
+      r: 0.6+Math.random()*1.6,
+      speed: 0.1+Math.random()*0.22,
+      drift: (Math.random()-0.5)*0.25,
+      alpha: 0.06+Math.random()*0.16
+    };
+  }
+  for(let i=0;i<40;i++){ const p = makeParticle(); p.y = Math.random()*h; particles.push(p); }
+  function tick(){
+    ctx.clearRect(0,0,w,h);
+    particles.forEach(p => {
+      p.y -= p.speed;
+      p.x += p.drift;
+      if(p.y < -10){ Object.assign(p, makeParticle()); }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(255,45,45,${p.alpha})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(tick);
+  }
+  tick();
+
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('nav a');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        navLinks.forEach(a => a.classList.remove('active'));
+        const link = document.querySelector('nav a[href="#'+entry.target.id+'"]');
+        if(link) link.classList.add('active');
+      }
+    });
+  }, {rootMargin:'-40% 0px -50% 0px'});
+  sections.forEach(s => obs.observe(s));
+
+  const boxObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => { if(entry.isIntersecting) entry.target.classList.add('in-view'); });
+  }, {threshold:0.15});
+  document.querySelectorAll('.box').forEach(b => boxObs.observe(b));
+</script>
+
+</body>
+</html>
