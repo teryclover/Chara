@@ -239,6 +239,7 @@
     <p><strong style="color:var(--white)">Particularité :</strong> une admiration très prononcée et obsessionnelle pour Clover.</p>
     <div class="quote choco-trigger" id="choco" style="border-left-color:var(--accent);cursor:pointer;">🍫 « Envie de gagner son cœur ? Un chocolat suffit. »</div>
     <div class="muted" style="margin-top:4px;">(clique sur le chocolat)</div>
+    <div class="quote" style="border-left-color:var(--muted);margin-top:16px;">⚠ « Mais si vous en abusez pour manipuler Chara, vous aurez un mauvais quart d'heure par l'oncle Xinu — qui est de toute façon un peu surprotecteur. »</div>
   </div>
 </section>
 
@@ -444,7 +445,7 @@
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3200);
+    setTimeout(() => t.classList.remove('show'), 6000);
   }
   document.getElementById('hidden-heart').addEventListener('click', () => {
     showToast("* Vous avez trouvé une âme cachée dans le coin de l'écran.");
