@@ -127,6 +127,18 @@
   .soul-big svg .crack{fill:none;stroke:#1a0000;stroke-width:0.6;opacity:.8;}
 
   .quote{border-left:3px solid var(--accent);padding-left:16px;margin:20px 0;font-style:italic;color:var(--white);font-size:13.5px;}
+  .choco-trigger{transition:transform .15s ease, background-color .3s ease;}
+  .choco-trigger:hover{transform:translateX(3px);background-color:rgba(255,45,45,.06);}
+  .choco-trigger:active{transform:translateX(3px) scale(.98);}
+
+  @keyframes float-heart{
+    0%{transform:translateY(0) scale(.8) rotate(0deg);opacity:1;}
+    100%{transform:translateY(-80px) scale(1.4) rotate(var(--rot,10deg));opacity:0;}
+  }
+  .float-heart{
+    position:fixed;pointer-events:none;font-size:16px;z-index:600;color:var(--accent);
+    animation:float-heart 1.3s ease-out forwards;
+  }
 
   .badge{
     display:inline-flex;align-items:center;justify-content:center;
@@ -225,6 +237,8 @@
     <p style="margin-top:20px;"><strong style="color:var(--white)">Pronoms :</strong> préfère être appelée au féminin, mais s'en soucie peu — que ce soit sous sa forme fantomatique ou dans son corps humain.</p>
     <p><strong style="color:var(--white)">Rapport aux humains :</strong> morte à cause d'humains, elle ne les apprécie pas et ne leur fait pas confiance — à l'exception de Mia. Elle n'est pas activement hostile ou irrespectueuse, mais ne cachera pas son aversion si on le lui demande. Les seuls humains qu'elle tolère, voire apprécie, sont les âmes de Gentillesse — naturellement bienveillantes.</p>
     <p><strong style="color:var(--white)">Particularité :</strong> une admiration très prononcée et obsessionnelle pour Clover.</p>
+    <div class="quote choco-trigger" id="choco" style="border-left-color:var(--accent);cursor:pointer;">🍫 « Envie de gagner son cœur ? Un chocolat suffit. »</div>
+    <div class="muted" style="margin-top:4px;">(clique sur le chocolat)</div>
   </div>
 </section>
 
@@ -283,6 +297,11 @@
         <div class="fname">Corps Humain</div>
         <div class="ftype">Coûteuse en énergie</div>
         <p>Chara peut animer son corps mort comme une marionnette — sans respiration, température ni douleur. Maintenir cette forme consomme de la Détermination ; l'instabilité de son âme brisée l'empêche d'y rester longtemps.</p>
+      </div>
+      <div class="form-card">
+        <div class="fname">Forme Lightner (Dark World)</div>
+        <div class="ftype">Uniquement dans un Dark World</div>
+        <p>Lorsqu'elle se trouve dans un Dark World, Chara se manifeste sous sa forme de Lightner — ce qui lui redonne un corps physique à part entière, aussi longtemps qu'elle reste dans ce monde. Une échappatoire temporaire à sa condition de fantôme, qui ne fonctionne que là-bas.</p>
       </div>
     </div>
   </div>
@@ -429,6 +448,29 @@
   }
   document.getElementById('hidden-heart').addEventListener('click', () => {
     showToast("* Vous avez trouvé une âme cachée dans le coin de l'écran.");
+  });
+
+  const chocoLines = [
+    "* Chara accepte le chocolat sans un mot... mais elle sourit.",
+    "* Elle en reprendrait bien un autre.",
+    "* Un chocolat de plus. Elle ne dira jamais non.",
+    "* Vous venez de monter dans son estime. Un peu trop, peut-être.",
+    "* Elle garde le papier d'emballage. Ne demandez pas pourquoi."
+  ];
+  document.getElementById('choco').addEventListener('click', (e) => {
+    showToast(chocoLines[Math.floor(Math.random()*chocoLines.length)]);
+    const rect = e.currentTarget.getBoundingClientRect();
+    for(let i = 0; i < 6; i++){
+      const heart = document.createElement('div');
+      heart.className = 'float-heart';
+      heart.textContent = Math.random() < 0.35 ? '🍫' : '♥';
+      heart.style.left = (rect.left + Math.random()*rect.width) + 'px';
+      heart.style.top = (rect.top + rect.height/2) + 'px';
+      heart.style.setProperty('--rot', (Math.random()*30 - 15) + 'deg');
+      heart.style.animationDelay = (Math.random()*0.2) + 's';
+      document.body.appendChild(heart);
+      setTimeout(() => heart.remove(), 1600);
+    }
   });
 
   const canvas = document.getElementById('dt');
